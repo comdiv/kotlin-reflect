@@ -11,7 +11,7 @@ plugins {
     `maven-publish`
 }
 
-val packageversion = "0.0.1-update-1"
+val packageversion = "0.0.2"
 
 group = "codes.comdiv.kotlin"
 version = packageversion
