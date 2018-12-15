@@ -2,44 +2,63 @@
 #
 # Check https://circleci.com/docs/2.0/language-java/ for more details
 #
-version: 2
-jobs:
-  build:
+version: 2.1
+
+executors:
+  main:
     docker:
-      # specify the version you desire here
       - image: circleci/openjdk:8-jdk
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
     working_directory: ~/repo
-
     environment:
       # Customize the JVM maximum heap limit
       JVM_OPTS: -Xmx3200m
       TERM: dumb
 
+commands:
+  startgradle:
     steps:
       - checkout
-
-      # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "build.gradle" }}
+            - v1-dependencies-{{ checksum "build.gradle.kts" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
-
       - run: gradle dependencies
-
       - save_cache:
           paths:
             - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
+          key: v1-dependencies-{{ checksum "build.gradle.kts" }}
 
-      # run tests!
-      - run: gradle check
+jobs:
+  build:
+    executor: main
+    steps:
+      - startgradle
+      - run: gradle --console=plain check
+      - run: bash <(curl -s https://codecov.io/bash) -f $HOME/build/reports/jacoco/test/*.xml
+      - run: mkdir /tmp/detekt
+      - run: cp build/reports/detekt/*.* /tmp/detekt
+      - store_artifacts:
+          path: /tmp/detekt
+          destination: detekt
+      - store_test_results:
+          path: build/test-results/test
 
+  deploy-bintray:
+    executor: main
+    steps:
+      - startgradle
+      - run: gradle --console=plain bintrayUpload
 
-
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build
+      - deploy-bintray:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - /release-?.*/

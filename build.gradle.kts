@@ -1,15 +1,20 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.3.11"
     id("io.gitlab.arturbosch.detekt") version "1.0.0-RC12"
     id("org.jmailen.kotlinter") version "1.20.1"
+    id("com.jfrog.bintray") version "1.8.4"
     jacoco
+    `maven-publish`
 }
 
+val packageversion = "0.0.1-update-1"
+
 group = "codes.comdiv.kotlin"
-version = "1.0-SNAPSHOT"
+version = packageversion
 
 
 
@@ -48,30 +53,67 @@ detekt {
     isIgnoreFailures = false
 }
 
+tasks.withType<JacocoReport> {
+    reports {
+        xml.isEnabled = true
+    }
+}
+
+
 
 tasks {
-    val detektTask = tasks.withType<Detekt>()
+    val detekt by existing
     val check by existing
     val jacocoTestReport by existing
     val jacocoTestCoverageVerification by existing
     val lintKotlin by existing
     val compileKotlin by existing
     val formatKotlin by existing
+
     check {
-        dependsOn(detektTask)
+        dependsOn(detekt)
         dependsOn(jacocoTestReport)
         dependsOn(jacocoTestCoverageVerification)
     }
     compileKotlin{
         dependsOn(lintKotlin)
     }
-    detektTask.forEach {
-        it.dependsOn(lintKotlin)
+
+    (detekt as TaskProvider<*>){ //it cannot resolve between extension and task
+        dependsOn(lintKotlin)
     }
     lintKotlin  {
         dependsOn(formatKotlin)
     }
 }
 
+bintray {
+    user = System.getenv("BINTRAY_USER")
+    key = System.getenv("BINTRAY_KEY")
+    publish = true
+    setPublications("mavenJava")
+    pkg.apply {
+        repo = "main"
+        name = "kotlin-reflect"
+        setLicenses( "Apache-2.0" )
+        vcsUrl = "https://github.com/comdiv/kotlin-reflect"
+        version.apply {
+            name = packageversion
+        }
+    }
+}
 
+val sourcesJar by tasks.registering(Jar::class) {
+    classifier = "sources"
+    from(sourceSets.get("main").allSource)
+}
 
+publishing {
+
+    publications {
+        register("mavenJava", MavenPublication::class) {
+            from(components["java"])
+            artifact(sourcesJar.get())
+        }
+    }
+}
