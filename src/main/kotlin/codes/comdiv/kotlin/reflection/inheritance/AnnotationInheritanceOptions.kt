@@ -6,7 +6,9 @@ data class AnnotationInheritanceOptions(
     val useRepeatable: Boolean = true,
     val explicitInheritOnly: Boolean = true,
     val explicitRepeatableOnly: Boolean = true,
-    val classInheritanceOptions: ClassInheritanceProviderOptions = ClassInheritanceProviderOptions.instance.copy(includeInterfaces = useInterfaces)
+    val classInheritanceOptions: ClassInheritanceProviderOptions =
+        ClassInheritanceProviderOptions.instance
+        .copy(includeInterfaces = useInterfaces)
 ) {
     companion object {
         val instance = AnnotationInheritanceOptions()

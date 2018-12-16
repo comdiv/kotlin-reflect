@@ -97,6 +97,7 @@ bintray {
         name = "kotlin-reflect"
         setLicenses( "Apache-2.0" )
         vcsUrl = "https://github.com/comdiv/kotlin-reflect"
+        githubRepo = "comdiv/kotlin-reflect"
         version.apply {
             name = packageversion
         }

@@ -112,4 +112,76 @@ internal class AnnotationInheritanceProviderTest {
                 }
             }
     }
+
+    @Test
+    fun noInterfaceOptionEnabled() {
+        AnnotationInheritanceProvider(AnnotationInheritanceOptions(useInterfaces = false)).iterateAnnotations(VeryInherited::class)
+            .toList().assume {
+                it.size.that { isEqualTo(5) }
+                +it[0].annotation.inheritNoRepeat(4)
+                +it[1].annotation.inherit(4)
+                +it[2].annotation.notinherit(4)
+                it.getOrNull(3)?.let {
+                    +it.annotation.inherit(3)
+                    it.inheritanceLevel.that { isEqualTo(1) }
+                    it.inheritanceTarget.that { isEqualTo(BothImplement::class) }
+                }
+                it.getOrNull(4)?.let {
+                    +it.annotation.inherit(1)
+                    it.inheritanceLevel.that { isEqualTo(2) }
+                    it.inheritanceTarget.that { isEqualTo(AbstractWithAnnotations::class) }
+                }
+            }
+    }
+
+    @Test
+    fun noInterfaceOptionEnabled_no_RepeatEnabled() {
+        AnnotationInheritanceProvider(
+            AnnotationInheritanceOptions(
+                useInterfaces = false,
+                useRepeatable = false
+            )).iterateAnnotations(VeryInherited::class)
+            .toList().assume {
+                it.size.that { isEqualTo(3) }
+                +it[0].annotation.inheritNoRepeat(4)
+                +it[1].annotation.inherit(4)
+                +it[2].annotation.notinherit(4)
+            }
+    }
+
+    @Test
+    fun noInterfaceOption_And_No_ExplicitRepeatable_Enabled() {
+        AnnotationInheritanceProvider(
+            AnnotationInheritanceOptions(
+                useInterfaces = false,
+                explicitRepeatableOnly = false
+            )
+        ).iterateAnnotations(VeryInherited::class)
+            .toList().assume {
+                it.size.that { isEqualTo(7) }
+                +it[0].annotation.inheritNoRepeat(4)
+                +it[1].annotation.inherit(4)
+                +it[2].annotation.notinherit(4)
+                it.getOrNull(3)?.let {
+                    +it.annotation.inheritNoRepeat(3)
+                    it.inheritanceLevel.that { isEqualTo(1) }
+                    it.inheritanceTarget.that { isEqualTo(BothImplement::class) }
+                }
+                it.getOrNull(4)?.let {
+                    +it.annotation.inherit(3)
+                    it.inheritanceLevel.that { isEqualTo(1) }
+                    it.inheritanceTarget.that { isEqualTo(BothImplement::class) }
+                }
+                it.getOrNull(5)?.let {
+                    +it.annotation.inheritNoRepeat(1)
+                    it.inheritanceLevel.that { isEqualTo(2) }
+                    it.inheritanceTarget.that { isEqualTo(AbstractWithAnnotations::class) }
+                }
+                it.getOrNull(6)?.let {
+                    +it.annotation.inherit(1)
+                    it.inheritanceLevel.that { isEqualTo(2) }
+                    it.inheritanceTarget.that { isEqualTo(AbstractWithAnnotations::class) }
+                }
+            }
+    }
 }
